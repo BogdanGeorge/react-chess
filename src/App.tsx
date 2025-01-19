@@ -33,15 +33,13 @@ const App: React.FC = () => {
     ) {
       makeComputerMove();
     }
-  }, [game, gameMode]);
+  }, [fenInput, gameMode]);
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      const newGame = new Chess(game.fen());
-      const move = newGame.move({ from, to, promotion: "q" });
-
+      const move = game.move({ from, to, promotion: "q" });
       if (move) {
-        setGame(newGame);
+        setGame(game);
         const moveDescription = `${(move.piece || "").toUpperCase()} ${
           move.from
         }-${move.to}`;
@@ -88,11 +86,30 @@ const App: React.FC = () => {
   };
 
   const undoMove = () => {
-    const newGame = new Chess(game.fen());
-    newGame.undo();
-    if (moveHistory.length > 0) {
+    const moves = game.history();
+    if (moves.length === 0) return; // No moves to undo
+
+    const newGame = new Chess();
+    console.log(moves);
+
+    // If computer made the last move (in computer vs human modes), undo both moves
+    if (
+      gameMode !== PLAY_MODES.HUMAN_VS_HUMAN &&
+      ((gameMode === PLAY_MODES.WHITE_VS_COMPUTER && game.turn() === "w") ||
+        (gameMode === PLAY_MODES.BLACK_VS_COMPUTER && game.turn() === "b"))
+    ) {
+      moves.slice(0, -2).forEach((move) => {
+        newGame.move(move);
+      });
+      setMoveHistory((history) => history.slice(0, -2));
+    } else {
+      // Replay all moves except the last one
+      moves.slice(0, -1).forEach((move) => {
+        newGame.move(move);
+      });
       setMoveHistory((history) => history.slice(0, -1));
     }
+
     setGame(newGame);
     setFenInput(newGame.fen());
   };
