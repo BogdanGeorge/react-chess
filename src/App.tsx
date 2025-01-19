@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Chess, validateFen } from "chess.js";
+import { Chess, Move, validateFen } from "chess.js";
 import { Box, Typography } from "@mui/material";
 import { fetchBestMove } from "./services/chessApi";
 import GameModeDialog from "./components/GameModeDialog/GameModeDialog";
@@ -8,7 +8,12 @@ import FenInput from "./components/FenInput/FenInput";
 import GameControls from "./components/GameControls/GameControls";
 import MoveHistory from "./components/MoveHistory/MoveHistory";
 import GameEndDialog from "./components/GameEndDialog/GameEndDialog";
-import { PLAY_MODES, GameMode } from "./constants/gameConstants";
+import {
+  PLAY_MODES,
+  GameMode,
+  GAME_WINNER,
+  GameWinner,
+} from "./constants/gameConstants";
 
 const App: React.FC = () => {
   const [game, setGame] = useState(new Chess());
@@ -17,7 +22,7 @@ const App: React.FC = () => {
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [showModeDialog, setShowModeDialog] = useState(true);
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [isWinner, setIsWinner] = useState(false);
+  const [gameWinner, setGameWinner] = useState<GameWinner | null>(null);
 
   const getFen = useCallback(() => game.fen(), [game]);
 
@@ -29,11 +34,19 @@ const App: React.FC = () => {
     setShowModeDialog(false);
   };
 
-  useEffect(() => {
+  const isComputerTurn = (gameMode: GameMode, game: Chess) => {
     if (
       (gameMode === PLAY_MODES.WHITE_VS_COMPUTER && game.turn() === "b") ||
       (gameMode === PLAY_MODES.BLACK_VS_COMPUTER && game.turn() === "w")
     ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  useEffect(() => {
+    if (isComputerTurn(gameMode, game)) {
       makeComputerMove();
     }
   }, [fenInput, gameMode]);
@@ -43,37 +56,50 @@ const App: React.FC = () => {
       const newGame = new Chess(game.fen());
       const move = newGame.move({ from, to, promotion: "q" });
 
-      if (move) {
-        setGame(newGame);
-        const moveDescription = `${(move.piece || "").toUpperCase()} ${
-          move.from
-        }-${move.to}`;
-        setMoveHistory((history) => [...history, moveDescription]);
-        setFenInput(newGame.fen());
+      if (!move) return false;
 
-        // Check for game end
-        if (newGame.isCheckmate()) {
-          if (gameMode === PLAY_MODES.HUMAN_VS_HUMAN) {
-            // In human vs human, the player who just made the move won
-            setIsWinner(true);
-          } else {
-            // In computer games, check if human won
-            const playerWon =
-              (gameMode === PLAY_MODES.WHITE_VS_COMPUTER &&
-                newGame.turn() === "b") ||
-              (gameMode === PLAY_MODES.BLACK_VS_COMPUTER &&
-                newGame.turn() === "w");
-            setIsWinner(playerWon);
-          }
-          setShowEndDialog(true);
-        }
+      updateGameState(newGame, move);
+      checkGameEnd(newGame);
 
-        return true;
-      }
-      return false;
+      return true;
     },
     [game, gameMode]
   );
+
+  // Helper function to update game state
+  const updateGameState = (newGame: Chess, move: Move) => {
+    setGame(newGame);
+    const moveDescription = formatMoveDescription(move);
+    setMoveHistory((history) => [...history, moveDescription]);
+    setFenInput(newGame.fen());
+  };
+
+  // Helper function to format move description
+  const formatMoveDescription = (move: Move): string => {
+    return `${(move.piece || "").toUpperCase()} ${move.from}-${move.to}`;
+  };
+
+  // Helper function to check if the game has ended
+  const checkGameEnd = (newGame: Chess) => {
+    if (newGame.isCheckmate()) {
+      const winner = determineWinner(newGame);
+      setGameWinner(winner);
+      setShowEndDialog(true);
+    }
+  };
+
+  // Helper function to determine the winner
+  const determineWinner = (newGame: Chess): GameWinner => {
+    if (gameMode === PLAY_MODES.HUMAN_VS_HUMAN) {
+      return GAME_WINNER.HUMAN; // In human vs human, the player who just moved won
+    }
+
+    if (isComputerTurn(gameMode, newGame)) {
+      return GAME_WINNER.COMPUTER;
+    }
+
+    return GAME_WINNER.HUMAN;
+  };
 
   const makeComputerMove = useCallback(async () => {
     try {
@@ -192,7 +218,7 @@ const App: React.FC = () => {
       <GameModeDialog open={showModeDialog} onModeSelect={handleModeSelect} />
       <GameEndDialog
         open={showEndDialog}
-        isWinner={isWinner}
+        winner={gameWinner}
         onRematch={handleRematch}
         onClose={handleEndDialogClose}
       />

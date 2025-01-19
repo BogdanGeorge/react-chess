@@ -9,32 +9,33 @@ import {
   Typography,
 } from "@mui/material";
 import Confetti from "react-confetti";
+import { GAME_WINNER, GameWinner } from "../../constants/gameConstants";
 
 interface GameEndDialogProps {
   open: boolean;
-  isWinner: boolean;
+  winner: GameWinner | null;
   onRematch: () => void;
   onClose: () => void;
 }
 
 const GameEndDialog: React.FC<GameEndDialogProps> = ({
   open,
-  isWinner,
+  winner,
   onRematch,
   onClose,
 }) => {
   return (
     <Dialog open={open} onClose={onClose}>
-      {isWinner && (
+      {winner === GAME_WINNER.HUMAN && (
         <Confetti width={50} height={50} recycle={false} numberOfPieces={10} />
       )}
       <DialogTitle>
-        {isWinner ? "Congratulations! 🎉" : "Game Over 😢"}
+        {winner === GAME_WINNER.HUMAN ? "Congratulations! 🎉" : "Game Over 😢"}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ textAlign: "center", py: 2 }}>
           <Typography variant="h6">
-            {isWinner
+            {winner === GAME_WINNER.HUMAN
               ? "You won! Well played!"
               : "Unfortunately you lost. Try again!"}
           </Typography>
