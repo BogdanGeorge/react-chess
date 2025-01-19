@@ -52,4 +52,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          artifact_name: production-files # Use the correct key with an underscore
+          artifact_name: production-files
