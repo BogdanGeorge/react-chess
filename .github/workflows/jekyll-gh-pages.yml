@@ -51,5 +51,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          name: production-files
-          path: ./dist
+          artifact-name: production-files
