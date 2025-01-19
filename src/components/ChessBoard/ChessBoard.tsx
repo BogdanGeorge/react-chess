@@ -9,13 +9,15 @@ interface ChessBoardProps {
 
 const ChessBoard: React.FC<ChessBoardProps> = ({ game, onMove }) => {
   return (
-    <ReactChessboard
-      position={game.fen()}
-      onPieceDrop={(sourceSquare, targetSquare) =>
-        onMove(sourceSquare, targetSquare)
-      }
-      boardWidth={500}
-    />
+    <div data-testid="chessboard">
+      <ReactChessboard
+        position={game.fen()}
+        onPieceDrop={(sourceSquare, targetSquare) =>
+          onMove(sourceSquare, targetSquare)
+        }
+        boardWidth={500}
+      />
+    </div>
   );
 };
 

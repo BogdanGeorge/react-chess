@@ -4,9 +4,19 @@
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ],
-  "compilerOptions":{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react",
     "types": [
-      "vite-plugin-pwa/client"
-    ]
+      "vite-plugin-pwa/client",
+      "jest",
+      "./src/setupTests"
+    ],
+    "baseUrl": "./src",
+    "paths": {
+      "@components/*": ["components/*"],
+      "@utils/*": ["utils/*"]
+    }
   }
 }

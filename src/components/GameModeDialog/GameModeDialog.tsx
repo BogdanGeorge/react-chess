@@ -6,7 +6,7 @@ import {
   ButtonGroup,
   Button,
 } from "@mui/material";
-import { PLAY_MODES, GameMode } from "../constants/gameConstants";
+import { PLAY_MODES, GameMode } from "../../constants/gameConstants";
 
 interface GameModeDialogProps {
   open: boolean;

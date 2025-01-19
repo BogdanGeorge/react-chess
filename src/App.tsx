@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Chess, validateFen } from "chess.js";
 import { Box, Typography } from "@mui/material";
 import { fetchBestMove } from "./services/chessApi";
-import GameModeDialog from "./components/GameModeDialog";
+import GameModeDialog from "./components/GameModeDialog/GameModeDialog";
 import ChessBoard from "./components/ChessBoard/ChessBoard";
 import FenInput from "./components/FenInput/FenInput";
 import GameControls from "./components/GameControls/GameControls";
