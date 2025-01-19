@@ -40,6 +40,7 @@ jobs:
         with:
           name: production-files
           path: ./dist
+
   deploy:
     environment:
       name: github-pages
@@ -51,4 +52,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          artifact-name: production-files
+          artifact_name: production-files # Use the correct key with an underscore
