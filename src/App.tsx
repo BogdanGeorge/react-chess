@@ -7,6 +7,7 @@ import ChessBoard from "./components/ChessBoard/ChessBoard";
 import FenInput from "./components/FenInput/FenInput";
 import GameControls from "./components/GameControls/GameControls";
 import MoveHistory from "./components/MoveHistory/MoveHistory";
+import GameEndDialog from "./components/GameEndDialog/GameEndDialog";
 import { PLAY_MODES, GameMode } from "./constants/gameConstants";
 
 const App: React.FC = () => {
@@ -15,6 +16,8 @@ const App: React.FC = () => {
   const [fenInput, setFenInput] = useState<string>(game.fen());
   const [gameMode, setGameMode] = useState<GameMode>(null);
   const [showModeDialog, setShowModeDialog] = useState(true);
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [isWinner, setIsWinner] = useState(false);
 
   const getFen = useCallback(() => game.fen(), [game]);
 
@@ -37,19 +40,39 @@ const App: React.FC = () => {
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      const move = game.move({ from, to, promotion: "q" });
+      const newGame = new Chess(game.fen());
+      const move = newGame.move({ from, to, promotion: "q" });
+
       if (move) {
-        setGame(game);
+        setGame(newGame);
         const moveDescription = `${(move.piece || "").toUpperCase()} ${
           move.from
         }-${move.to}`;
         setMoveHistory((history) => [...history, moveDescription]);
-        setFenInput(getFen());
+        setFenInput(newGame.fen());
+
+        // Check for game end
+        if (newGame.isCheckmate()) {
+          if (gameMode === PLAY_MODES.HUMAN_VS_HUMAN) {
+            // In human vs human, the player who just made the move won
+            setIsWinner(true);
+          } else {
+            // In computer games, check if human won
+            const playerWon =
+              (gameMode === PLAY_MODES.WHITE_VS_COMPUTER &&
+                newGame.turn() === "b") ||
+              (gameMode === PLAY_MODES.BLACK_VS_COMPUTER &&
+                newGame.turn() === "w");
+            setIsWinner(playerWon);
+          }
+          setShowEndDialog(true);
+        }
+
         return true;
       }
       return false;
     },
-    [game, getFen]
+    [game, gameMode]
   );
 
   const makeComputerMove = useCallback(async () => {
@@ -114,6 +137,15 @@ const App: React.FC = () => {
     setFenInput(newGame.fen());
   };
 
+  const handleRematch = () => {
+    resetGame();
+    setShowEndDialog(false);
+  };
+
+  const handleEndDialogClose = () => {
+    setShowEndDialog(false);
+  };
+
   return (
     <Box
       sx={{
@@ -158,6 +190,12 @@ const App: React.FC = () => {
       </Box>
 
       <GameModeDialog open={showModeDialog} onModeSelect={handleModeSelect} />
+      <GameEndDialog
+        open={showEndDialog}
+        isWinner={isWinner}
+        onRematch={handleRematch}
+        onClose={handleEndDialogClose}
+      />
     </Box>
   );
 };
