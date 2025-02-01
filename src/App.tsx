@@ -3,7 +3,7 @@ import { Chess, Move, validateFen } from "chess.js";
 import { Box, Typography } from "@mui/material";
 import { fetchBestMove } from "./services/chessApi";
 import GameModeDialog from "./components/GameModeDialog/GameModeDialog";
-import ChessBoard from "./components/ChessBoard/ChessBoard";
+import ChessBoard, { CustomMove } from "./components/ChessBoard/ChessBoard";
 import FenInput from "./components/FenInput/FenInput";
 import GameControls from "./components/GameControls/GameControls";
 import MoveHistory from "./components/MoveHistory/MoveHistory";
@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [showModeDialog, setShowModeDialog] = useState(true);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [gameWinner, setGameWinner] = useState<GameWinner | null>(null);
+  const [bestMove, setBestMove] = useState<CustomMove | null>(null);
 
   const getFen = useCallback(() => game.fen(), [game]);
 
@@ -53,7 +54,10 @@ const App: React.FC = () => {
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      const newGame = new Chess(game.fen());
+      const newGame = new Chess();
+      game.history().forEach((move) => {
+        newGame.move(move);
+      });
       const move = newGame.move({ from, to, promotion: "q" });
 
       if (!move) return false;
@@ -128,6 +132,10 @@ const App: React.FC = () => {
     try {
       const data = await fetchBestMove(getFen());
       const move = data.text;
+      setBestMove({ from: data.from, to: data.to });
+      setTimeout(() => {
+        setBestMove(null);
+      }, 2000);
       setMoveHistory((history) => [...history, move ?? ""]);
     } catch (error) {
       console.error("Error fetching best move:", error);
@@ -136,12 +144,10 @@ const App: React.FC = () => {
 
   const undoMove = () => {
     const moves = game.history();
-    if (moves.length === 0) return; // No moves to undo
+    if (moves.length === 0) return;
 
     const newGame = new Chess();
-    console.log(moves);
 
-    // If computer made the last move (in computer vs human modes), undo both moves
     if (
       gameMode !== PLAY_MODES.HUMAN_VS_HUMAN &&
       ((gameMode === PLAY_MODES.WHITE_VS_COMPUTER && game.turn() === "w") ||
@@ -152,7 +158,6 @@ const App: React.FC = () => {
       });
       setMoveHistory((history) => history.slice(0, -2));
     } else {
-      // Replay all moves except the last one
       moves.slice(0, -1).forEach((move) => {
         newGame.move(move);
       });
@@ -189,7 +194,7 @@ const App: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           React Chess
         </Typography>
-        <ChessBoard game={game} onMove={handleMove} />
+        <ChessBoard game={game} onMove={handleMove} bestMove={bestMove} />
         <FenInput
           fenInput={fenInput}
           onFenChange={setFenInput}
